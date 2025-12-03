@@ -1,0 +1,39 @@
+name: Build File Binder Legacy
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # Cho phép bấm nút chạy thủ công
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Bước 1: Cài đặt MSBuild (Công cụ build chuẩn của Visual Studio)
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.1
+
+    # Bước 2: Cài đặt NuGet để tải thư viện nếu thiếu
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0
+
+    # Bước 3: Restore các gói thư viện (nếu có)
+    - name: Restore NuGet Packages
+      run: nuget restore File-Binder.sln
+
+    # Bước 4: Build bằng MSBuild (thay vì dotnet build)
+    - name: Build Solution
+      run: msbuild File-Binder.sln /p:Configuration=Release /p:Platform="Any CPU"
+
+    # Bước 5: Tìm và upload file EXE
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: FileBinder-Exe
+        path: |
+          **/bin/Release/**/*.exe
+          **/bin/Release/**/*.dll
