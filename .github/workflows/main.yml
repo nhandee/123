@@ -1,0 +1,41 @@
+name: Build File Binder
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Project này dùng định dạng SDK-style nên cần .NET SDK để build
+    # Dù target là .NET 2.0 nhưng ta dùng công cụ build của .NET 6/7/8 vẫn được
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+
+    # Restore các thư viện cần thiết
+    - name: Restore dependencies
+      run: dotnet restore File-Binder.sln
+
+    # Build project ở chế độ Release
+    - name: Build
+      run: dotnet build File-Binder.sln --configuration Release --no-restore
+
+    # Gom file exe lại để tải về
+    # Lưu ý: Do target net20 nên đường dẫn bin sẽ nằm trong thư mục net20
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: FileBinder-Exe
+        path: |
+          **/bin/Release/net20/*.exe
+          **/bin/Release/net20/*.dll
+          **/bin/Release/net20/*.config
